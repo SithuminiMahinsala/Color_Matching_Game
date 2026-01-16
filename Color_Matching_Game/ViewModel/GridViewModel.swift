@@ -13,6 +13,7 @@ class GameViewModel: ObservableObject {
     @Published var grid: [GridCell] = []
     @Published var score: Int = 0
     @Published var isGameOver: Bool = false
+    @Published var isFlipping: Bool = false
     
     // Tracks the first square the user clicked
     private var selectedIndex: Int? = nil
@@ -57,7 +58,7 @@ class GameViewModel: ObservableObject {
     
     //Handles what happens user taps the cell
     func selectCell(_ index: Int) {
-        guard !grid[index].isMatched, !grid[index].isSelected, !isGameOver else { return }
+        guard !grid[index].isMatched, !grid[index].isSelected, !isFlipping else { return }
         
         grid[index].isSelected = true
         
@@ -68,8 +69,13 @@ class GameViewModel: ObservableObject {
                 score += 10
                 selectedIndex = nil
             }else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    self.isGameOver = true
+                isFlipping = true
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    self.grid[firstIndex].isSelected = false
+                    self.grid[index].isSelected = false
+                    self.selectedIndex = nil
+                    
                 }
             }
         } else {

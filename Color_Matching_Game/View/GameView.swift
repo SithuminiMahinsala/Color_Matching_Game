@@ -40,8 +40,13 @@ struct GameView: View {
             }
                       
                 .padding()
+            if viewModel.grid.allSatisfy({ $0.isMatched }) && !viewModel.grid.isEmpty{
+                Text("Well Done!")
+                    .font(.largeTitle)
+                    .foregroundColor(.green)
+            }
                       
-                      if viewModel.isGameOver {
+                     /* if viewModel.isGameOver {
                 Text("Game Over!")
                     .font(.largeTitle)
                     .foregroundColor(.red)
@@ -49,7 +54,7 @@ struct GameView: View {
                 Text("You Win!")
                     .font(.largeTitle)
                     .foregroundColor(.green)
-            }
+            }*/
                       
                       //Restart button
                       Button("Restart") {
