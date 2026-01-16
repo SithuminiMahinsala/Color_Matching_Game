@@ -57,7 +57,7 @@ class GameViewModel: ObservableObject {
     
     //Handles what happens user taps the cell
     func selectCell(_ index: Int) {
-        guard !grid[index].isMatched, !grid[index].isSelected else { return }
+        guard !grid[index].isMatched, !grid[index].isSelected, !isGameOver else { return }
         
         grid[index].isSelected = true
         
@@ -66,11 +66,12 @@ class GameViewModel: ObservableObject {
                 grid[firstIndex].isMatched = true
                 grid[index].isMatched = true
                 score += 10
+                selectedIndex = nil
             }else {
-                isGameOver = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self.isGameOver = true
+                }
             }
-            
-            selectedIndex = nil
         } else {
             selectedIndex = index
         }
