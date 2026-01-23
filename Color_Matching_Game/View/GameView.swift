@@ -10,8 +10,9 @@ import SwiftUI
 struct GameView: View {
     @StateObject var viewModel: GameViewModel
     let gridSize: Int
+    @State private var playerName: String = ""
     
-    private let spacing: CGFloat = 4
+    private let spacing: CGFloat = 8
     
     init(gridSize: Int) {
         _viewModel = StateObject(wrappedValue: GameViewModel(gridSize: gridSize))
@@ -19,53 +20,158 @@ struct GameView: View {
     }
     
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Score: \(viewModel.score)")
-                .font(.title)
-                .bold()
-            
+        VStack(spacing: 15) {
+            // --- Header: Stats and Progress Bar ---
+            VStack(spacing: 10) {
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text("SCORE")
+                            .font(.caption.bold())
+                            .foregroundColor(.secondary)
+                        Text("\(viewModel.score)")
+                            .font(.title2.bold())
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing) {
+                        Text("FLIPS LEFT")
+                            .font(.caption.bold())
+                            .foregroundColor(.secondary)
+                        Text("\(viewModel.movesRemaining)")
+                            .font(.title2.bold())
+                            .foregroundColor(viewModel.movesRemaining < 5 ? .red : .primary)
+                    }
+                }
+                
+                // Visual Progress Bar
+                ProgressView(value: Double(viewModel.grid.filter { $0.isMatched }.count),
+                             total: Double(viewModel.grid.count))
+                    .tint(.green)
+                    .scaleEffect(x: 1, y: 1.5, anchor: .center)
+            }
+            .padding(.horizontal)
+            .padding(.top, 10)
+
+            Spacer()
+
+            // --- Game Grid Section ---
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: gridSize),
-                      spacing: spacing)
-                      {
+                      spacing: spacing) {
                 ForEach(viewModel.grid.indices, id: \.self) { index in
-                    let cell = viewModel.grid[index]
-                    
-                    CellView(cell: cell)
+                    CellView(cell: viewModel.grid[index])
                         .onTapGesture {
-                            if !viewModel.isGameOver {
-                                viewModel.selectCell(index)
-                            }
+                            handleTap(index: index)
                         }
                 }
             }
-                      
-                .padding()
-            if viewModel.grid.allSatisfy({ $0.isMatched }) && !viewModel.grid.isEmpty{
-                Text("Well Done!")
-                    .font(.largeTitle)
-                    .foregroundColor(.green)
+            .padding()
+            .background(RoundedRectangle(cornerRadius: 20).fill(Color.gray.opacity(0.05)))
+            
+            Spacer()
+            
+            // --- Status Overlays (Game Over / Win) ---
+            VStack {
+                if viewModel.isGameOver {
+                    Text("GAME OVER")
+                        .font(.system(.title, design: .rounded).bold())
+                        .foregroundColor(.red)
+                }
+                
+                // Victory View: Only shows when all items are matched
+                if viewModel.grid.allSatisfy({ $0.isMatched }) && !viewModel.grid.isEmpty {
+                    VStack(spacing: 12) {
+                        Text("Well Done!")
+                            .font(.system(.title, design: .rounded).bold())
+                            .foregroundColor(.green)
+                        
+                        TextField("Enter name to save score", text: $playerName)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                        
+                        Button(action: {
+                            // 1. Save score with mode calculation
+                            viewModel.saveFinalScore(playerName: playerName, gridSize: gridSize)
+                            
+                            // 2. Clear input
+                            playerName = ""
+                            
+                            // 3. RESET THE GAME IMMEDIATELY
+                            viewModel.startNewGame(gridSize: gridSize)
+                            
+                            // 4. Feedback
+                            triggerNotificationHaptic(.success)
+                        }) {
+                            Text("Save & Rank Up")
+                                .bold()
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(playerName.isEmpty ? Color.gray : Color.green)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                        }
+                        .disabled(playerName.isEmpty)
+                        .padding(.horizontal, 40)
+                    }
+                }
             }
-                      
-                     /* if viewModel.isGameOver {
-                Text("Game Over!")
-                    .font(.largeTitle)
-                    .foregroundColor(.red)
-            } else if viewModel.grid.allSatisfy({$0.isMatched }) && !viewModel.grid.isEmpty {
-                Text("You Win!")
-                    .font(.largeTitle)
-                    .foregroundColor(.green)
-            }*/
-                      
-                      //Restart button
-                      Button("Restart") {
-                viewModel.startNewGame(gridSize: gridSize)
+
+            Spacer()
+            
+            // --- Equal-Sized Action Buttons ---
+            HStack(spacing: 15) {
+                Button(action: {
+                    viewModel.revealHint()
+                    triggerImpactHaptic(.medium)
+                }) {
+                    Label("Hint", systemImage: "eye.fill")
+                        .bold()
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(viewModel.isFlipping ? Color.gray : Color.orange)
+                        .foregroundColor(.white)
+                        .cornerRadius(15)
+                        .shadow(radius: 3)
+                }
+                .disabled(viewModel.isFlipping)
+                
+                Button(action: {
+                    viewModel.startNewGame(gridSize: gridSize)
+                    triggerImpactHaptic(.light)
+                }) {
+                    Label("Restart", systemImage: "arrow.clockwise")
+                        .bold()
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(15)
+                        .shadow(radius: 3)
+                }
             }
-                      
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
+            .padding(.horizontal)
+            .padding(.bottom, 10)
         }
-        .padding()
+        .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    // --- Helper Functions and Haptics ---
+    
+    private func handleTap(index: Int) {
+        if !viewModel.isGameOver {
+            viewModel.selectCell(index)
+            triggerImpactHaptic(.light)
+        } else {
+            triggerNotificationHaptic(.error)
+        }
+    }
+    
+    private func triggerNotificationHaptic(_ type: UINotificationFeedbackGenerator.FeedbackType) {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(type)
+    }
+    
+    private func triggerImpactHaptic(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.impactOccurred()
     }
 }
