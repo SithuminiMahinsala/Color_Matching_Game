@@ -11,9 +11,11 @@ struct CellView: View {
     
     var body: some View {
         Rectangle()
-            .fill(cell.isMatched ? Color.gray : cell.color)
-            .opacity(cell.isSelected || cell.isMatched ? 1 : 0.7)
+            .fill(cell.isMatched || cell.isSelected ? cell.color : Color.gray)
+            //.opacity(cell.isSelected || cell.isMatched ? 1 : 0.7)
             .aspectRatio(1, contentMode: .fit)
+            .cornerRadius(10)
+            .shadow(radius: 2)
             .animation(.easeInOut(duration: 0.2), value: cell.isSelected)
     }
 }
