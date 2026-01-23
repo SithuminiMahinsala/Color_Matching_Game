@@ -50,17 +50,17 @@ class GameViewModel: ObservableObject {
         default: movesRemaining = 20
         }
         
-        //1.Generate random pairs of colors
+        //Generate random pairs of colors
         var pairs = (0..<(gridSize * gridSize) / 2).map { _ in
             normalColors.randomElement()!
         }
         
-        //2.Handled odd sized grids(like 3*3)
+        //Handled odd sized grids(like 3*3)
         if(gridSize * gridSize) % 2 == 1 {
             pairs.append(normalColors.randomElement()!)
         }
         
-        //3.Duplicate & shuffle the colors
+        //Duplicate & shuffle the colors
         let allColors = (pairs + pairs).shuffled().prefix(gridSize * gridSize)
         grid = allColors.map { GridCell(color: $0) }
         
@@ -134,7 +134,7 @@ class GameViewModel: ObservableObject {
     
     // Save players and scores
     func saveFinalScore(playerName: String, gridSize: Int) {
-        // 1. Determine mode name based on grid size
+        //Determine mode name based on grid size
         let modeName: String
         switch gridSize {
         case 3: modeName = "Easy"
@@ -143,12 +143,12 @@ class GameViewModel: ObservableObject {
         default: modeName = "Unknown"
         }
 
-        // 2. Calculate final score: Match Points + (Remaining Flips * 10)
+        //Calculate final score: Match Points + (Remaining Flips * 10)
         let finalScore = self.score + (self.movesRemaining * 10)
         
         let newScore = PlayerScore(name: playerName, score: finalScore, mode: modeName, date: Date())
         
-        // 3. Update the leaderboard
+        //Update the leaderboard
         if let data = UserDefaults.standard.data(forKey: "high_scores"),
            var savedScores = try? JSONDecoder().decode([PlayerScore].self, from: data) {
             savedScores.append(newScore)
@@ -161,7 +161,7 @@ class GameViewModel: ObservableObject {
             leaderboard = [newScore]
         }
         
-        // 4. Save back to disk
+        //Save back to disk
         if let encoded = try? JSONEncoder().encode(leaderboard) {
             UserDefaults.standard.set(encoded, forKey: "high_scores")
         }

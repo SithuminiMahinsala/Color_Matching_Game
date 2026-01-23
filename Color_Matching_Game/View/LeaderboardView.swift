@@ -18,7 +18,7 @@ struct LeaderboardView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // --- Mode Selector ---
+            //Mode Selector 
             Picker("Select Mode", selection: $selectedMode) {
                 Text("Easy").tag("Easy")
                 Text("Medium").tag("Medium")
@@ -28,7 +28,7 @@ struct LeaderboardView: View {
             .padding()
             .background(Color(.systemGroupedBackground))
             
-            // --- Leaderboard List ---
+            //Leaderboard List
             List {
                 if filteredScores.isEmpty {
                     Section {

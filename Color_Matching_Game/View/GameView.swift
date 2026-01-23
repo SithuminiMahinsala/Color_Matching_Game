@@ -21,7 +21,7 @@ struct GameView: View {
     
     var body: some View {
         VStack(spacing: 15) {
-            // --- Header: Stats and Progress Bar ---
+            //Header: Stats and Progress Bar
             VStack(spacing: 10) {
                 HStack {
                     VStack(alignment: .leading) {
@@ -53,7 +53,7 @@ struct GameView: View {
 
             Spacer()
 
-            // --- Game Grid Section ---
+            //Game Grid Section
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: gridSize),
                       spacing: spacing) {
                 ForEach(viewModel.grid.indices, id: \.self) { index in
@@ -68,7 +68,7 @@ struct GameView: View {
             
             Spacer()
             
-            // --- Status Overlays (Game Over / Win) ---
+            //Status Overlays (Game Over / Win)
             VStack {
                 if viewModel.isGameOver {
                     Text("GAME OVER")
@@ -89,16 +89,16 @@ struct GameView: View {
                             .padding(.horizontal, 40)
                         
                         Button(action: {
-                            // 1. Save score with mode calculation
+                            //Save score with mode calculation
                             viewModel.saveFinalScore(playerName: playerName, gridSize: gridSize)
                             
-                            // 2. Clear input
+                            //Clear input
                             playerName = ""
                             
-                            // 3. RESET THE GAME IMMEDIATELY
+                            //RESET THE GAME IMMEDIATELY
                             viewModel.startNewGame(gridSize: gridSize)
                             
-                            // 4. Feedback
+                            //Feedback
                             triggerNotificationHaptic(.success)
                         }) {
                             Text("Save & Rank Up")
@@ -117,7 +117,7 @@ struct GameView: View {
 
             Spacer()
             
-            // --- Equal-Sized Action Buttons ---
+            //Action Buttons
             HStack(spacing: 15) {
                 Button(action: {
                     viewModel.revealHint()
@@ -154,7 +154,7 @@ struct GameView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
     
-    // --- Helper Functions and Haptics ---
+    //Helper Functions and Haptics
     
     private func handleTap(index: Int) {
         if !viewModel.isGameOver {

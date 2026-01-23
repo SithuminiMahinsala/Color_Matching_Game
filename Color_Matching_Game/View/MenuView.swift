@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct MenuView: View {
-    // 1. Separate state variables for each mode's high score
+    //Separate state variables for each mode's high score
     @State private var topScoreEasy: Int = 0
     @State private var topScoreMedium: Int = 0
     @State private var topScoreHard: Int = 0
@@ -36,7 +36,7 @@ struct MenuView: View {
                     
                     Spacer()
                     
-                    // 2. Pass specific high scores to the buttons
+                    //Pass specific high scores to the buttons
                     VStack(spacing: 20) {
                         menuButton(title: "Easy", color: .green, gridSize: 3, topScore: topScoreEasy)
                         menuButton(title: "Medium", color: .yellow, gridSize: 5, topScore: topScoreMedium)
@@ -71,7 +71,7 @@ struct MenuView: View {
         }
     }
     
-    // 3. Updated helper function to display the score inside the button
+    //Updated helper function to display the score inside the button
     func menuButton(title: String, color: Color, gridSize: Int, topScore: Int) -> some View {
         NavigationLink(destination: GameView(gridSize: gridSize)) {
             HStack {
@@ -100,7 +100,7 @@ struct MenuView: View {
         }
     }
     
-    // 4. Logic to filter and find the highest score for EACH mode
+    //Logic to filter and find the highest score for EACH mode
     func loadAllHighScores() {
         if let data = UserDefaults.standard.data(forKey: "high_scores"),
            let savedScores = try? JSONDecoder().decode([PlayerScore].self, from: data) {
