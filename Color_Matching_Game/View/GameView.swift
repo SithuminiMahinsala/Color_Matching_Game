@@ -20,141 +20,145 @@ struct GameView: View {
     }
     
     var body: some View {
-        VStack(spacing: 15) {
-            //Header: Stats and Progress Bar
-            VStack(spacing: 10) {
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text("SCORE")
-                            .font(.caption.bold())
-                            .foregroundColor(.secondary)
-                        Text("\(viewModel.score)")
-                            .font(.title2.bold())
-                    }
-                    Spacer()
-                    VStack(alignment: .trailing) {
-                        Text("FLIPS LEFT")
-                            .font(.caption.bold())
-                            .foregroundColor(.secondary)
-                        Text("\(viewModel.movesRemaining)")
-                            .font(.title2.bold())
-                            .foregroundColor(viewModel.movesRemaining < 5 ? .red : .primary)
-                    }
-                }
-                
-                // Visual Progress Bar
-                ProgressView(value: Double(viewModel.grid.filter { $0.isMatched }.count),
-                             total: Double(viewModel.grid.count))
-                    .tint(.green)
-                    .scaleEffect(x: 1, y: 1.5, anchor: .center)
-            }
-            .padding(.horizontal)
-            .padding(.top, 10)
-
-            Spacer()
-
-            //Game Grid Section
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: gridSize),
-                      spacing: spacing) {
-                ForEach(viewModel.grid.indices, id: \.self) { index in
-                    CellView(cell: viewModel.grid[index])
-                        .onTapGesture {
-                            handleTap(index: index)
+        // Wrap everything in a ZStack to allow the confetti to overlay the UI
+        ZStack {
+            VStack(spacing: 15) {
+                // Header: Stats and Progress Bar
+                VStack(spacing: 10) {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("SCORE")
+                                .font(.caption.bold())
+                                .foregroundColor(.secondary)
+                            Text("\(viewModel.score)")
+                                .font(.title2.bold())
                         }
+                        Spacer()
+                        VStack(alignment: .trailing) {
+                            Text("FLIPS LEFT")
+                                .font(.caption.bold())
+                                .foregroundColor(.secondary)
+                            Text("\(viewModel.movesRemaining)")
+                                .font(.title2.bold())
+                                .foregroundColor(viewModel.movesRemaining < 5 ? .red : .primary)
+                        }
+                    }
+                    
+                    // Visual Progress Bar
+                    ProgressView(value: Double(viewModel.grid.filter { $0.isMatched }.count),
+                                 total: Double(viewModel.grid.count))
+                        .tint(.green)
+                        .scaleEffect(x: 1, y: 1.5, anchor: .center)
                 }
-            }
-            .padding()
-            .background(RoundedRectangle(cornerRadius: 20).fill(Color.gray.opacity(0.05)))
-            
-            Spacer()
-            
-            //Status Overlays (Game Over / Win)
-            VStack {
-                if viewModel.isGameOver {
-                    Text("GAME OVER")
-                        .font(.system(.title, design: .rounded).bold())
-                        .foregroundColor(.red)
+                .padding(.horizontal)
+                .padding(.top, 10)
+
+                Spacer()
+
+                // Game Grid Section
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: gridSize),
+                          spacing: spacing) {
+                    ForEach(viewModel.grid.indices, id: \.self) { index in
+                        CellView(cell: viewModel.grid[index])
+                            .onTapGesture {
+                                handleTap(index: index)
+                            }
+                    }
                 }
+                .padding()
+                .background(RoundedRectangle(cornerRadius: 20).fill(Color.gray.opacity(0.05)))
                 
-                // Victory View: Only shows when all items are matched
-                if viewModel.grid.allSatisfy({ $0.isMatched }) && !viewModel.grid.isEmpty {
-                    VStack(spacing: 12) {
-                        Text("Well Done!")
+                Spacer()
+                
+                // Status Overlays (Game Over / Win)
+                VStack {
+                    if viewModel.isGameOver {
+                        Text("GAME OVER")
                             .font(.system(.title, design: .rounded).bold())
-                            .foregroundColor(.green)
-                        
-                        TextField("Enter name to save score", text: $playerName)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .multilineTextAlignment(.center)
+                            .foregroundColor(.red)
+                    }
+                    
+                    // Victory View: Only shows when all items are matched
+                    if viewModel.grid.allSatisfy({ $0.isMatched }) && !viewModel.grid.isEmpty {
+                        VStack(spacing: 12) {
+                            Text("Well Done!")
+                                .font(.system(.title, design: .rounded).bold())
+                                .foregroundColor(.green)
+                            
+                            TextField("Enter name to save score", text: $playerName)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 40)
+                            
+                            Button(action: {
+                                viewModel.saveFinalScore(playerName: playerName, gridSize: gridSize)
+                                playerName = ""
+                                viewModel.startNewGame(gridSize: gridSize)
+                                triggerNotificationHaptic(.success)
+                            }) {
+                                Text("Save & Rank Up")
+                                    .bold()
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(playerName.isEmpty ? Color.gray : Color.green)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(12)
+                            }
+                            .disabled(playerName.isEmpty)
                             .padding(.horizontal, 40)
-                        
-                        Button(action: {
-                            //Save score with mode calculation
-                            viewModel.saveFinalScore(playerName: playerName, gridSize: gridSize)
-                            
-                            //Clear input
-                            playerName = ""
-                            
-                            //RESET THE GAME IMMEDIATELY
-                            viewModel.startNewGame(gridSize: gridSize)
-                            
-                            //Feedback
-                            triggerNotificationHaptic(.success)
-                        }) {
-                            Text("Save & Rank Up")
-                                .bold()
-                                .padding()
-                                .frame(maxWidth: .infinity)
-                                .background(playerName.isEmpty ? Color.gray : Color.green)
-                                .foregroundColor(.white)
-                                .cornerRadius(12)
                         }
-                        .disabled(playerName.isEmpty)
-                        .padding(.horizontal, 40)
                     }
                 }
-            }
 
-            Spacer()
-            
-            //Action Buttons
-            HStack(spacing: 15) {
-                Button(action: {
-                    viewModel.revealHint()
-                    triggerImpactHaptic(.medium)
-                }) {
-                    Label("Hint", systemImage: "eye.fill")
-                        .bold()
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(viewModel.isFlipping ? Color.gray : Color.orange)
-                        .foregroundColor(.white)
-                        .cornerRadius(15)
-                        .shadow(radius: 3)
-                }
-                .disabled(viewModel.isFlipping)
+                Spacer()
                 
-                Button(action: {
-                    viewModel.startNewGame(gridSize: gridSize)
-                    triggerImpactHaptic(.light)
-                }) {
-                    Label("Restart", systemImage: "arrow.clockwise")
-                        .bold()
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(15)
-                        .shadow(radius: 3)
+                // Action Buttons
+                HStack(spacing: 15) {
+                    Button(action: {
+                        viewModel.revealHint()
+                        triggerImpactHaptic(.medium)
+                    }) {
+                        Label("Hint", systemImage: "eye.fill")
+                            .bold()
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(viewModel.isFlipping ? Color.gray : Color.orange)
+                            .foregroundColor(.white)
+                            .cornerRadius(15)
+                            .shadow(radius: 3)
+                    }
+                    .disabled(viewModel.isFlipping)
+                    
+                    Button(action: {
+                        viewModel.startNewGame(gridSize: gridSize)
+                        triggerImpactHaptic(.light)
+                    }) {
+                        Label("Restart", systemImage: "arrow.clockwise")
+                            .bold()
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(15)
+                            .shadow(radius: 3)
+                    }
                 }
+                .padding(.horizontal)
+                .padding(.bottom, 10)
             }
-            .padding(.horizontal)
-            .padding(.bottom, 10)
+            .navigationBarTitleDisplayMode(.inline)
+            
+            // Confetti Overlay Logic
+            // Triggered automatically when the game logic detects all cards are matched
+            if viewModel.grid.allSatisfy({ $0.isMatched }) && !viewModel.grid.isEmpty {
+                ConfettiView()
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false) // Ensures you can still interact with buttons underneath
+            }
         }
-        .navigationBarTitleDisplayMode(.inline)
     }
     
-    //Helper Functions and Haptics
+    // Helper Functions and Haptics
     
     private func handleTap(index: Int) {
         if !viewModel.isGameOver {
