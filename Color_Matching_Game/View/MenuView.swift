@@ -12,6 +12,8 @@ struct MenuView: View {
     @State private var topScoreEasy: Int = 0
     @State private var topScoreMedium: Int = 0
     @State private var topScoreHard: Int = 0
+    // This checks UserDefaults to see if they've seen it before
+    @State private var showingTutorial = !UserDefaults.standard.bool(forKey: "hasSeenTutorial")
     
     var body: some View {
         NavigationStack {
@@ -52,6 +54,15 @@ struct MenuView: View {
                 }
                 .padding()
             }
+            
+            .fullScreenCover(isPresented: $showingTutorial) {
+                TutorialView()
+                    .onDisappear {
+                        // Save the fact that they've seen it now
+                        UserDefaults.standard.set(true, forKey: "hasSeenTutorial")
+                    }
+            }
+            
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
                     NavigationLink(destination: LeaderboardView()) {
