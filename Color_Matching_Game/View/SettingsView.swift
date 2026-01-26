@@ -61,6 +61,12 @@ struct SettingsView: View {
                 }
             }
             
+            Section(header: Text("Developer Diagnostics")) {
+                NavigationLink(destination: TelemetryLogView()) {
+                    Label("View Session Telemetry", systemImage: "chart.xyaxis.line")
+                }
+            }
+            
             Section(header: Text("About Developer")) {
                 HStack {
                     Text("Name")

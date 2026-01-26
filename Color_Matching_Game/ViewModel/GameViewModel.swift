@@ -17,13 +17,14 @@ class GameViewModel: ObservableObject {
     @Published var movesRemaining: Int = 0
     @Published var leaderboard: [PlayerScore] = []
     @Published var timeRemaining: Int = 0 // Tracks seconds for Time Attack
+    @Published var totalClicks: Int = 0 // Tracks every card tap for telemetry
     
     // --- Internal Properties ---
     private var gameTimer: AnyCancellable? // The actual clock engine
     var currentMode: String // Tracks current difficulty/mode
     private var selectedIndex: Int? = nil
     
-    // Vibrant color palette
+    // Vibrant color palette for the game tiles
     private let normalColors: [Color] = [
         Color(red:240/255, green: 43/255, blue: 29/255),   // Red
         Color(red:34/255, green: 160/255, blue: 59/255),   // Green
@@ -34,6 +35,7 @@ class GameViewModel: ObservableObject {
         Color(red:0/255, green: 191/255, blue: 213/255)    // Cyan
     ]
     
+    // FIXED: Initialize mode first to avoid compiler errors
     init(gridSize: Int, mode: String) {
         self.currentMode = mode
         startNewGame(gridSize: gridSize)
@@ -43,12 +45,16 @@ class GameViewModel: ObservableObject {
     
     func startNewGame(gridSize: Int) {
         score = 0
+        totalClicks = 0 // Telemetry: Reset clicks
         isGameOver = false
         grid = []
         selectedIndex = nil
         
         // Stop any active timer before starting a new session
         stopTimer()
+        
+        // Telemetry: Start tracking the session duration
+        TelemetryManager.shared.startTracking()
         
         // 1. Setup mode-specific limits
         if currentMode == "Time Attack" {
@@ -137,6 +143,8 @@ class GameViewModel: ObservableObject {
         let isOutOfResources = (currentMode == "Time Attack") ? (timeRemaining <= 0) : (movesRemaining <= 0)
         guard !isFlipping, !grid[index].isMatched, !grid[index].isSelected, !isOutOfResources else { return }
         
+        // Telemetry: Increment click counter
+        totalClicks += 1
         grid[index].isSelected = true
         
         // Handle last remaining cell for odd-sized grids
@@ -194,9 +202,11 @@ class GameViewModel: ObservableObject {
         }
     }
 
-    // Replace your handleWin and saveFinalScore with this improved logic
     private func handleWin() {
         stopTimer() // Kill clock on victory
+        
+        // Telemetry: Record session stats on win
+        TelemetryManager.shared.endTracking(mode: currentMode, clicks: totalClicks)
         
         // 1. Increment persistent win counter for unlocking levels
         let currentWins = UserDefaults.standard.integer(forKey: "total_wins")
@@ -210,7 +220,6 @@ class GameViewModel: ObservableObject {
     }
 
     func saveFinalScore(playerName: String) {
-        // Uses the EXACT mode name passed from the MenuView
         let modeName = self.currentMode
 
         // Calculate score based on mode resources
@@ -219,7 +228,6 @@ class GameViewModel: ObservableObject {
         
         let newScore = PlayerScore(name: playerName, score: finalScore, mode: modeName, date: Date())
         
-        // Add to leaderboard and persist to UserDefaults
         if let data = UserDefaults.standard.data(forKey: "high_scores"),
            var savedScores = try? JSONDecoder().decode([PlayerScore].self, from: data) {
             savedScores.append(newScore)
