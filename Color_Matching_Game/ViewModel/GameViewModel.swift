@@ -194,20 +194,32 @@ class GameViewModel: ObservableObject {
         }
     }
 
+    // Replace your handleWin and saveFinalScore with this improved logic
     private func handleWin() {
         stopTimer() // Kill clock on victory
+        
+        // 1. Increment persistent win counter for unlocking levels
         let currentWins = UserDefaults.standard.integer(forKey: "total_wins")
         UserDefaults.standard.set(currentWins + 1, forKey: "total_wins")
+        
+        // 2. AUTO-SAVE: Automatically save the score using the current profile
+        let currentUsername = UserDefaults.standard.string(forKey: "username") ?? "Player"
+        self.saveFinalScore(playerName: currentUsername)
+        
         UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
-    
-    func saveFinalScore(playerName: String, gridSize: Int) {
-        // Efficiency Bonus calculation
-        let resourceBonus = (currentMode == "Time Attack") ? (timeRemaining * 5) : (movesRemaining * 10)
+
+    func saveFinalScore(playerName: String) {
+        // Uses the EXACT mode name passed from the MenuView
+        let modeName = self.currentMode
+
+        // Calculate score based on mode resources
+        let resourceBonus = (modeName == "Time Attack") ? (self.timeRemaining * 5) : (self.movesRemaining * 10)
         let finalScore = self.score + resourceBonus
         
-        let newScore = PlayerScore(name: playerName, score: finalScore, mode: currentMode, date: Date())
+        let newScore = PlayerScore(name: playerName, score: finalScore, mode: modeName, date: Date())
         
+        // Add to leaderboard and persist to UserDefaults
         if let data = UserDefaults.standard.data(forKey: "high_scores"),
            var savedScores = try? JSONDecoder().decode([PlayerScore].self, from: data) {
             savedScores.append(newScore)

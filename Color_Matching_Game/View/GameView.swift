@@ -104,25 +104,24 @@ struct GameView: View {
                     }
                     
                     // Victory View with Profile Integration
+                    // Update the Victory Button in GameView.swift
                     if viewModel.grid.allSatisfy({ $0.isMatched }) && !viewModel.grid.isEmpty {
                         VStack(spacing: 12) {
                             Text("Victory!")
                                 .font(.system(.title, design: .rounded).bold())
                                 .foregroundColor(.green)
                             
-                            Text("Score saved to \(username)'s profile")
+                            Text("Your score has been saved to the leaderboard.")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
 
                             Button("Play Again") {
-                                viewModel.saveFinalScore(playerName: username, gridSize: gridSize)
+                                // Just start a new game; the score was already saved by handleWin()
                                 viewModel.startNewGame(gridSize: gridSize)
                                 triggerNotificationHaptic(.success)
                             }
                             .buttonStyle(.borderedProminent)
-                            .controlSize(.large)
                         }
-                        .transition(.scale.combined(with: .opacity))
                     }
                 }
 

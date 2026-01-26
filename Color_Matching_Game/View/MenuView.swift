@@ -16,6 +16,9 @@ struct MenuView: View {
     @State private var totalWins: Int = UserDefaults.standard.integer(forKey: "total_wins")
     @State private var showingTutorial = !UserDefaults.standard.bool(forKey: "hasSeenTutorial")
     
+    @State private var topScoreTimeAttack: Int = 0
+    @State private var topScoreMemoryBlitz: Int = 0
+    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -76,20 +79,19 @@ struct MenuView: View {
 
                         // --- Classic Progression Section ---
                         VStack(alignment: .leading, spacing: 15) {
-                            sectionHeader(title: "Classic Levels", icon: "chart.bar.fill")
-                            
-                            menuButton(title: "Easy", color: .green, gridSize: 3, topScore: topScoreEasy, isLocked: false)
-                            menuButton(title: "Medium", color: .orange, gridSize: 5, topScore: topScoreMedium, isLocked: totalWins < 3)
-                            menuButton(title: "Hard", color: .red, gridSize: 7, topScore: topScoreHard, isLocked: totalWins < 10)
-                        }
+                                    sectionHeader(title: "Classic Levels", icon: "chart.bar.fill")
+                                    menuButton(title: "Easy", color: .green, gridSize: 3, topScore: topScoreEasy, isLocked: false)
+                                    menuButton(title: "Medium", color: .orange, gridSize: 5, topScore: topScoreMedium, isLocked: totalWins < 3)
+                                    menuButton(title: "Hard", color: .red, gridSize: 7, topScore: topScoreHard, isLocked: totalWins < 10)
+                                }
                         
                         // --- Special Challenges Section ---
                         VStack(alignment: .leading, spacing: 15) {
-                            sectionHeader(title: "Special Challenges", icon: "bolt.fill")
-                            
-                            menuButton(title: "Time Attack", color: .purple, gridSize: 5, topScore: 0, isLocked: totalWins < 15)
-                            menuButton(title: "Memory Blitz", color: .indigo, gridSize: 6, topScore: 0, isLocked: totalWins < 20)
-                        }
+                                    sectionHeader(title: "Special Challenges", icon: "bolt.fill")
+                                    // FIX: Pass the new topScore variables here
+                                    menuButton(title: "Time Attack", color: .purple, gridSize: 5, topScore: topScoreTimeAttack, isLocked: totalWins < 15)
+                                    menuButton(title: "Memory Blitz", color: .indigo, gridSize: 6, topScore: topScoreMemoryBlitz, isLocked: totalWins < 20)
+                                }
                         
                         Spacer(minLength: 50)
                     }
@@ -164,12 +166,16 @@ struct MenuView: View {
 
     func loadAllStats() {
         totalWins = UserDefaults.standard.integer(forKey: "total_wins")
+        
         if let data = UserDefaults.standard.data(forKey: "high_scores"),
            let savedScores = try? JSONDecoder().decode([PlayerScore].self, from: data) {
             
+            // These MUST match your button titles exactly
             topScoreEasy = savedScores.filter { $0.mode == "Easy" }.map { $0.score }.max() ?? 0
             topScoreMedium = savedScores.filter { $0.mode == "Medium" }.map { $0.score }.max() ?? 0
             topScoreHard = savedScores.filter { $0.mode == "Hard" }.map { $0.score }.max() ?? 0
+            topScoreTimeAttack = savedScores.filter { $0.mode == "Time Attack" }.map { $0.score }.max() ?? 0
+            topScoreMemoryBlitz = savedScores.filter { $0.mode == "Memory Blitz" }.map { $0.score }.max() ?? 0
         }
     }
 }
