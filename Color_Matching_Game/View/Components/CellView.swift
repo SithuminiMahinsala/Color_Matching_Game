@@ -6,17 +6,50 @@
 //
 
 import SwiftUI
+
 struct CellView: View {
-    var cell: GridCell
+    let cell: GridCell
     
     var body: some View {
-        Rectangle()
-            .fill(cell.isMatched || cell.isSelected ? cell.color : Color.gray)
-            //.opacity(cell.isSelected || cell.isMatched ? 1 : 0.7)
-            .aspectRatio(1, contentMode: .fit)
-            .cornerRadius(10)
-            .shadow(radius: 2)
-            .animation(.easeInOut(duration: 0.2), value: cell.isSelected)
+        ZStack {
+            // BACK of the card (Visible when NOT selected/flipped)
+            RoundedRectangle(cornerRadius: 12)
+                .fill(LinearGradient(
+                    gradient: Gradient(colors: [.blue]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ))
+                .overlay(
+                    Image(systemName: "questionmark.circle")
+                        .font(.title)
+                        .foregroundColor(.white.opacity(0.5))
+                )
+                // If it is selected OR matched, hide the back
+                .opacity(cell.isSelected || cell.isMatched ? 0 : 1)
+            
+            // FRONT of the card (Visible when selected or matched)
+            RoundedRectangle(cornerRadius: 12)
+                .fill(cell.color)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white.opacity(0.3), lineWidth: 2)
+                )
+                // If it is selected OR matched, show the color
+                .opacity(cell.isSelected || cell.isMatched ? 1 : 0)
+        }
+        // --- The 3D Flip Animation ---
+        .rotation3DEffect(
+            .degrees(cell.isSelected || cell.isMatched ? 180 : 0),
+            axis: (x: 0, y: 1, z: 0) // Flips horizontally on the Y-axis
+        )
+        // Ensures content (like icons) isn't mirrored when flipped
+        .rotation3DEffect(
+            .degrees(cell.isSelected || cell.isMatched ? 180 : 0),
+            axis: (x: 0, y: 1, z: 0)
+        )
+        // Adds a bouncy spring effect to the movement
+        .animation(.spring(response: 0.4, dampingFraction: 0.6), value: cell.isSelected)
+        .aspectRatio(1, contentMode: .fit)
     }
 }
 
