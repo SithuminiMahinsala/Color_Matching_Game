@@ -17,6 +17,8 @@ class GameViewModel: ObservableObject {
     @Published var movesRemaining: Int = 0
     @Published var leaderboard: [PlayerScore] = []
     
+    var currentMode: String
+    
     // Tracks the index of the first card clicked in a pair attempt
     private var selectedIndex: Int? = nil
     
@@ -31,9 +33,10 @@ class GameViewModel: ObservableObject {
         Color(red:0/255, green: 191/255, blue: 213/255)    // Cyan
     ]
     
-    init(gridSize: Int) {
-        startNewGame(gridSize: gridSize)
-    }
+    init(gridSize: Int, mode: String) {
+            self.currentMode = mode
+            startNewGame(gridSize: gridSize)
+        }
     
     // --- Core Game Logic ---
     

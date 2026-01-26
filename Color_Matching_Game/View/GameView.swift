@@ -10,20 +10,24 @@ import SwiftUI
 struct GameView: View {
     @StateObject var viewModel: GameViewModel
     let gridSize: Int
-    @State private var playerName: String = ""
+    let mode: String // Tracks current difficulty/mode
+    
+    // Automatically fetches the username saved during the tutorial
+    @AppStorage("username") private var username: String = "Player"
     
     private let spacing: CGFloat = 8
     
-    init(gridSize: Int) {
-        _viewModel = StateObject(wrappedValue: GameViewModel(gridSize: gridSize))
+    init(gridSize: Int, mode: String) {
         self.gridSize = gridSize
+        self.mode = mode
+        // Now both values are passed to the ViewModel correctly
+        _viewModel = StateObject(wrappedValue: GameViewModel(gridSize: gridSize, mode: mode))
     }
     
     var body: some View {
-        // Wrap everything in a ZStack to allow the confetti to overlay the UI
         ZStack {
             VStack(spacing: 15) {
-                // Header: Stats and Progress Bar
+                // --- Header: Stats and Progress Bar ---
                 VStack(spacing: 10) {
                     HStack {
                         VStack(alignment: .leading) {
@@ -33,7 +37,19 @@ struct GameView: View {
                             Text("\(viewModel.score)")
                                 .font(.title2.bold())
                         }
+                        
                         Spacer()
+                        
+                        // Mode Badge
+                        Text(mode.uppercased())
+                            .font(.caption2.bold())
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(5)
+                        
+                        Spacer()
+                        
                         VStack(alignment: .trailing) {
                             Text("FLIPS LEFT")
                                 .font(.caption.bold())
@@ -44,7 +60,6 @@ struct GameView: View {
                         }
                     }
                     
-                    // Visual Progress Bar
                     ProgressView(value: Double(viewModel.grid.filter { $0.isMatched }.count),
                                  total: Double(viewModel.grid.count))
                         .tint(.green)
@@ -55,7 +70,7 @@ struct GameView: View {
 
                 Spacer()
 
-                // Game Grid Section
+                // --- Game Grid Section ---
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: gridSize),
                           spacing: spacing) {
                     ForEach(viewModel.grid.indices, id: \.self) { index in
@@ -70,7 +85,7 @@ struct GameView: View {
                 
                 Spacer()
                 
-                // Status Overlays (Game Over / Win)
+                // --- Status Overlays (Game Over / Win) ---
                 VStack {
                     if viewModel.isGameOver {
                         Text("GAME OVER")
@@ -78,41 +93,33 @@ struct GameView: View {
                             .foregroundColor(.red)
                     }
                     
-                    // Victory View: Only shows when all items are matched
+                    // NEW: Victory View with Profile Integration
                     if viewModel.grid.allSatisfy({ $0.isMatched }) && !viewModel.grid.isEmpty {
                         VStack(spacing: 12) {
-                            Text("Well Done!")
+                            Text("Victory!")
                                 .font(.system(.title, design: .rounded).bold())
                                 .foregroundColor(.green)
                             
-                            TextField("Enter name to save score", text: $playerName)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 40)
-                            
-                            Button(action: {
-                                viewModel.saveFinalScore(playerName: playerName, gridSize: gridSize)
-                                playerName = ""
+                            Text("Score saved to \(username)'s profile")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+
+                            Button("Play Again") {
+                                // Save score to current profile and reset
+                                viewModel.saveFinalScore(playerName: username, gridSize: gridSize)
                                 viewModel.startNewGame(gridSize: gridSize)
                                 triggerNotificationHaptic(.success)
-                            }) {
-                                Text("Save & Rank Up")
-                                    .bold()
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
-                                    .background(playerName.isEmpty ? Color.gray : Color.green)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(12)
                             }
-                            .disabled(playerName.isEmpty)
-                            .padding(.horizontal, 40)
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.large)
                         }
+                        .transition(.scale.combined(with: .opacity))
                     }
                 }
 
                 Spacer()
                 
-                // Action Buttons
+                // --- Action Buttons ---
                 HStack(spacing: 15) {
                     Button(action: {
                         viewModel.revealHint()
@@ -148,17 +155,16 @@ struct GameView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             
-            // Confetti Overlay Logic
-            // Triggered automatically when the game logic detects all cards are matched
+            // --- Confetti Overlay ---
             if viewModel.grid.allSatisfy({ $0.isMatched }) && !viewModel.grid.isEmpty {
                 ConfettiView()
                     .ignoresSafeArea()
-                    .allowsHitTesting(false) // Ensures you can still interact with buttons underneath
+                    .allowsHitTesting(false)
             }
         }
     }
     
-    // Helper Functions and Haptics
+    // --- Helper Functions and Haptics ---
     
     private func handleTap(index: Int) {
         if !viewModel.isGameOver {

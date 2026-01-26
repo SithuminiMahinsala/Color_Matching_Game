@@ -17,10 +17,16 @@ struct TutorialStep: Identifiable {
 struct TutorialView: View {
     @Environment(\.dismiss) var dismiss
     
+    // Persistent storage for the username
+    @AppStorage("username") private var username: String = ""
+    
+    // State to track which page the user is on
+    @State private var currentStep = 0
+    
     let steps = [
         TutorialStep(title: "Match Colors", description: "Tap tiles to find matching colors. Clear the board to win!", icon: "paintpalette.fill", color: .blue),
         TutorialStep(title: "Save Flips", description: "Every flip left at the end adds 10 bonus points to your score!", icon: "star.circle.fill", color: .orange),
-        TutorialStep(title: "Global Ranking", description: "Enter your name after winning to climb the leaderboards.", icon: "trophy.fill", color: .yellow)
+        TutorialStep(title: "Your Profile", description: "Set your name once to track your wins and climb the leaderboard.", icon: "person.crop.circle.badge.checkmark", color: .green)
     ]
     
     var body: some View {
@@ -28,34 +34,75 @@ struct TutorialView: View {
             Color(.systemBackground).ignoresSafeArea()
             
             VStack {
-                TabView {
-                    ForEach(steps) { step in
-                        VStack(spacing: 20) {
-                            Image(systemName: step.icon)
+                TabView(selection: $currentStep) {
+                    ForEach(0..<steps.count, id: \.self) { index in
+                        VStack(spacing: 30) {
+                            Image(systemName: steps[index].icon)
                                 .font(.system(size: 80))
-                                .foregroundColor(step.color)
+                                .foregroundColor(steps[index].color)
                             
-                            Text(step.title)
-                                .font(.largeTitle.bold())
+                            VStack(spacing: 15) {
+                                Text(steps[index].title)
+                                    .font(.largeTitle.bold())
+                                
+                                Text(steps[index].description)
+                                    .font(.body)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 40)
+                                    .foregroundColor(.secondary)
+                            }
                             
-                            Text(step.description)
-                                .font(.body)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 40)
-                                .foregroundColor(.secondary)
+                            // SHOW TEXTFIELD ONLY ON THE LAST STEP
+                            if index == steps.count - 1 {
+                                VStack(spacing: 10) {
+                                    TextField("Enter your name", text: $username)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                        .multilineTextAlignment(.center)
+                                        .font(.title3)
+                                        .padding(.horizontal, 50)
+                                        .submitLabel(.done)
+                                    
+                                    if username.isEmpty {
+                                        Text("Please enter a name to continue")
+                                            .font(.caption)
+                                            .foregroundColor(.red)
+                                    }
+                                }
+                                .padding(.top, 20)
+                                .transition(.opacity) // Smooth appearance
+                            }
                         }
+                        .tag(index)
                     }
                 }
-                .tabViewStyle(.page) // This adds the swipe dots at the bottom
+                .tabViewStyle(.page)
                 .indexViewStyle(.page(backgroundDisplayMode: .always))
                 
-                Button("Start Playing") {
-                    dismiss()
+                // BUTTON LOGIC: Changes text and behavior on last page
+                Button(action: {
+                    if currentStep < steps.count - 1 {
+                        withAnimation { currentStep += 1 }
+                    } else {
+                        dismiss()
+                    }
+                }) {
+                    Text(currentStep == steps.count - 1 ? "Let's Play!" : "Next")
+                        .bold()
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(isButtonDisabled ? Color.gray : .blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(15)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                .disabled(isButtonDisabled)
+                .padding(.horizontal, 40)
                 .padding(.bottom, 50)
             }
         }
+    }
+    
+    // Validation logic
+    private var isButtonDisabled: Bool {
+        return currentStep == steps.count - 1 && username.trimmingCharacters(in: .whitespaces).isEmpty
     }
 }
