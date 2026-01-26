@@ -51,6 +51,16 @@ struct SettingsView: View {
                 }
             }
             
+            Section(header: Text("Legal")) {
+                NavigationLink(destination: PrivacyView()) {
+                    Label("Privacy Policy", systemImage: "shield.lefthalf.filled")
+                }
+                
+                NavigationLink(destination: TermsOfServiceView()) {
+                    Label("Terms of Service", systemImage: "doc.text")
+                }
+            }
+            
             Section(header: Text("About Developer")) {
                 HStack {
                     Text("Name")
