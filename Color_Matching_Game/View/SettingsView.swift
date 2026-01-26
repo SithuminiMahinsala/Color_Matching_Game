@@ -70,7 +70,8 @@ struct SettingsView: View {
     }
     
     private func resetAllData() {
-        UserDefaults.standard.removeObject(forKey: "high_scores") //
+        UserDefaults.standard.removeObject(forKey: "high_scores")
+        UserDefaults.standard.removeObject(forKey: "total_wins") // Resets the level locking
         triggerImpactHaptic(.heavy)
     }
     

@@ -8,11 +8,15 @@
 import SwiftUI
 
 struct MenuView: View {
-    //Separate state variables for each mode's high score
+    // High scores for each mode
     @State private var topScoreEasy: Int = 0
     @State private var topScoreMedium: Int = 0
     @State private var topScoreHard: Int = 0
-    // This checks UserDefaults to see if they've seen it before
+    
+    // Tracks total wins to handle level unlocking
+    @State private var totalWins: Int = 0
+    
+    // Onboarding trigger
     @State private var showingTutorial = !UserDefaults.standard.bool(forKey: "hasSeenTutorial")
     
     var body: some View {
@@ -36,13 +40,38 @@ struct MenuView: View {
                     }
                     .padding(.top, 40)
                     
+                    // --- Progression Progress Section ---
+                    if totalWins < 10 {
+                        VStack(spacing: 8) {
+                            Text("Total Wins: \(totalWins)")
+                                .font(.subheadline.bold())
+                                .foregroundColor(.blue)
+                            
+                            // Visual hint for the next unlock
+                            let nextGoal = totalWins < 3 ? 3 : 10
+                            let modeName = totalWins < 3 ? "Medium" : "Hard"
+                            
+                            Text("\(nextGoal - totalWins) more wins to unlock \(modeName)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 20)
+                        .background(Capsule().fill(Color.blue.opacity(0.1)))
+                    }
+
                     Spacer()
                     
-                    //Pass specific high scores to the buttons
+                    // Difficulty Buttons with Locking Logic
                     VStack(spacing: 20) {
-                        menuButton(title: "Easy", color: .green, gridSize: 3, topScore: topScoreEasy)
-                        menuButton(title: "Medium", color: .yellow, gridSize: 5, topScore: topScoreMedium)
-                        menuButton(title: "Hard", color: .red, gridSize: 7, topScore: topScoreHard)
+                        // Easy: Always Unlocked
+                        menuButton(title: "Easy", color: .green, gridSize: 3, topScore: topScoreEasy, isLocked: false)
+                        
+                        // Medium: Unlocks after 3 wins
+                        menuButton(title: "Medium", color: .yellow, gridSize: 5, topScore: topScoreMedium, isLocked: totalWins < 3)
+                        
+                        // Hard: Unlocks after 10 wins
+                        menuButton(title: "Hard", color: .red, gridSize: 7, topScore: topScoreHard, isLocked: totalWins < 10)
                     }
                     
                     Spacer()
@@ -54,15 +83,12 @@ struct MenuView: View {
                 }
                 .padding()
             }
-            
             .fullScreenCover(isPresented: $showingTutorial) {
                 TutorialView()
                     .onDisappear {
-                        // Save the fact that they've seen it now
                         UserDefaults.standard.set(true, forKey: "hasSeenTutorial")
                     }
             }
-            
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
                     NavigationLink(destination: LeaderboardView()) {
@@ -77,46 +103,57 @@ struct MenuView: View {
                 }
             }
             .onAppear {
-                loadAllHighScores()
+                loadAllStats()
             }
         }
     }
     
-    //Updated helper function to display the score inside the button
-    func menuButton(title: String, color: Color, gridSize: Int, topScore: Int) -> some View {
+    // Helper function for difficulty buttons with locking UI
+    func menuButton(title: String, color: Color, gridSize: Int, topScore: Int, isLocked: Bool) -> some View {
         NavigationLink(destination: GameView(gridSize: gridSize)) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.title2.bold())
                     
-                    if topScore > 0 {
+                    if isLocked {
+                        Text("Locked")
+                            .font(.caption.bold())
+                            .opacity(0.8)
+                    } else if topScore > 0 {
                         Text("Best: \(topScore)")
                             .font(.caption.bold())
                             .opacity(0.9)
                     }
                 }
                 Spacer()
-                Image(systemName: "play.circle.fill")
+                // Show a lock icon if the mode is unavailable
+                Image(systemName: isLocked ? "lock.fill" : "play.circle.fill")
                     .font(.title)
             }
             .padding(.horizontal, 25)
             .frame(maxWidth: .infinity)
             .frame(height: 80)
-            .background(color)
+            // Visual feedback for locked state: Grey and transparent
+            .background(isLocked ? Color.gray : color)
             .foregroundColor(.white)
             .cornerRadius(20)
-            .shadow(color: color.opacity(0.4), radius: 8, x: 0, y: 4)
+            .shadow(color: isLocked ? Color.clear : color.opacity(0.4), radius: 8, x: 0, y: 4)
+            .opacity(isLocked ? 0.6 : 1.0)
             .padding(.horizontal)
         }
+        .disabled(isLocked) // Prevent navigation if locked
     }
     
-    //Logic to filter and find the highest score for EACH mode
-    func loadAllHighScores() {
+    // Loads high scores and win progression from UserDefaults
+    func loadAllStats() {
+        // Refresh total wins for locking logic
+        totalWins = UserDefaults.standard.integer(forKey: "total_wins")
+        
+        // Refresh high scores for each mode
         if let data = UserDefaults.standard.data(forKey: "high_scores"),
            let savedScores = try? JSONDecoder().decode([PlayerScore].self, from: data) {
             
-            // Filter by mode name and find the maximum for each
             topScoreEasy = savedScores.filter { $0.mode == "Easy" }.map { $0.score }.max() ?? 0
             topScoreMedium = savedScores.filter { $0.mode == "Medium" }.map { $0.score }.max() ?? 0
             topScoreHard = savedScores.filter { $0.mode == "Hard" }.map { $0.score }.max() ?? 0
