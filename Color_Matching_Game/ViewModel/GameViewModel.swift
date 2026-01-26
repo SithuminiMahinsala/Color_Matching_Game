@@ -16,13 +16,14 @@ class GameViewModel: ObservableObject {
     @Published var isFlipping: Bool = false
     @Published var movesRemaining: Int = 0
     @Published var leaderboard: [PlayerScore] = []
+    @Published var timeRemaining: Int = 0 // Tracks seconds for Time Attack
     
-    var currentMode: String
-    
-    // Tracks the index of the first card clicked in a pair attempt
+    // --- Internal Properties ---
+    private var gameTimer: AnyCancellable? // The actual clock engine
+    var currentMode: String // Tracks current difficulty/mode
     private var selectedIndex: Int? = nil
     
-    // Vibrant color palette for the game tiles
+    // Vibrant color palette
     private let normalColors: [Color] = [
         Color(red:240/255, green: 43/255, blue: 29/255),   // Red
         Color(red:34/255, green: 160/255, blue: 59/255),   // Green
@@ -34,9 +35,9 @@ class GameViewModel: ObservableObject {
     ]
     
     init(gridSize: Int, mode: String) {
-            self.currentMode = mode
-            startNewGame(gridSize: gridSize)
-        }
+        self.currentMode = mode
+        startNewGame(gridSize: gridSize)
+    }
     
     // --- Core Game Logic ---
     
@@ -46,30 +47,74 @@ class GameViewModel: ObservableObject {
         grid = []
         selectedIndex = nil
         
-        // Define flip limits based on difficulty
-        switch gridSize {
-        case 3: movesRemaining = 15
-        case 5: movesRemaining = 35
-        case 7: movesRemaining = 60
-        default: movesRemaining = 20
+        // Stop any active timer before starting a new session
+        stopTimer()
+        
+        // 1. Setup mode-specific limits
+        if currentMode == "Time Attack" {
+            timeRemaining = 60 // 60-second limit for Time Attack
+        } else {
+            switch gridSize {
+            case 3: movesRemaining = 15
+            case 5: movesRemaining = 35
+            case 7: movesRemaining = 60
+            default: movesRemaining = 20
+            }
         }
         
-        // Prepare pairs of colors
+        // 2. Prepare grid colors
         var pairs = (0..<(gridSize * gridSize) / 2).map { _ in
             normalColors.randomElement()!
         }
-        
-        // Handle odd-numbered grids (like 3x3)
         if (gridSize * gridSize) % 2 == 1 {
             pairs.append(normalColors.randomElement()!)
         }
-        
-        // Shuffle and assign to the grid
         let allColors = (pairs + pairs).shuffled().prefix(gridSize * gridSize)
-        grid = allColors.map { GridCell(color: $0) }
+        
+        // 3. MEMORIZE PHASE: Cards start face-up in Hard/Memory Blitz
+        let shouldPreview = (currentMode == "Hard" || currentMode == "Memory Blitz")
+        grid = allColors.map { GridCell(color: $0, isSelected: shouldPreview) }
+        
+        if shouldPreview {
+            isFlipping = true // Lock interaction
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                withAnimation(.spring()) {
+                    for i in self.grid.indices {
+                        self.grid[i].isSelected = false
+                    }
+                    self.isFlipping = false // Unlock for player
+                    self.startTimerIfRequired() // Start clock after preview
+                }
+            }
+        } else {
+            self.startTimerIfRequired()
+        }
+    }
+    
+    // --- Timer Engine ---
+    
+    private func startTimerIfRequired() {
+        guard currentMode == "Time Attack" else { return }
+        
+        gameTimer = Timer.publish(every: 1, on: .main, in: .common)
+            .autoconnect()
+            .sink { _ in
+                if self.timeRemaining > 0 {
+                    self.timeRemaining -= 1
+                } else {
+                    self.isGameOver = true
+                    self.stopTimer()
+                }
+            }
+    }
+    
+    func stopTimer() {
+        gameTimer?.cancel()
+        gameTimer = nil
     }
     
     func revealHint() {
+        guard !isFlipping else { return }
         isFlipping = true
         for i in grid.indices {
             if !grid[i].isMatched {
@@ -77,7 +122,6 @@ class GameViewModel: ObservableObject {
             }
         }
         
-        // Hide cards again after 1.5 seconds
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             for i in self.grid.indices {
                 if !self.grid[i].isMatched {
@@ -89,23 +133,26 @@ class GameViewModel: ObservableObject {
     }
     
     func selectCell(_ index: Int) {
-        // Validation: Block taps if flipping, matched, already selected, or out of moves
-        guard !isFlipping, !grid[index].isMatched, !grid[index].isSelected, movesRemaining > 0 else { return }
+        // Validation: Block taps based on mode resources
+        let isOutOfResources = (currentMode == "Time Attack") ? (timeRemaining <= 0) : (movesRemaining <= 0)
+        guard !isFlipping, !grid[index].isMatched, !grid[index].isSelected, !isOutOfResources else { return }
         
         grid[index].isSelected = true
         
-        // Special case: Single remaining unmatched cell (odd grids)
+        // Handle last remaining cell for odd-sized grids
         let unmatchedCount = grid.filter { !$0.isMatched }.count
         if unmatchedCount == 1 {
             grid[index].isMatched = true
             score += 5
-            handleWin() // Trigger progression logic
+            handleWin()
             return
         }
         
         if let firstIndex = selectedIndex {
-            // This is the second card being flipped
-            movesRemaining -= 1
+            // Apply mode-specific penalties
+            if currentMode != "Time Attack" {
+                movesRemaining -= (currentMode == "Hard") ? 2 : 1
+            }
             
             if grid[firstIndex].color == grid[index].color {
                 // Match Found!
@@ -114,17 +161,24 @@ class GameViewModel: ObservableObject {
                 score += 10
                 selectedIndex = nil
                 
-                // Check if the whole board is cleared
+                // Reward for Time Attack: Bonus time!
+                if currentMode == "Time Attack" {
+                    timeRemaining += 3
+                }
+                
                 if grid.allSatisfy({ $0.isMatched }) {
                     handleWin()
                 }
             } else {
-                // No Match: Show cards briefly then flip back
+                // No Match logic
                 isFlipping = true
                 
-                if movesRemaining <= 0 {
+                let outOfResourcesAfterFlip = (currentMode == "Time Attack") ? (timeRemaining <= 0) : (movesRemaining <= 0)
+                
+                if outOfResourcesAfterFlip {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                         self.isGameOver = true
+                        self.stopTimer()
                     }
                 } else {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
@@ -136,55 +190,32 @@ class GameViewModel: ObservableObject {
                 }
             }
         } else {
-            // This is the first card being flipped
             selectedIndex = index
         }
     }
 
-    // --- Progression & Level Locking Logic ---
-    
-    /// Called when the player successfully clears the grid.
-    /// Increments the persistent win counter for level unlocking.
     private func handleWin() {
-        // Get existing wins from disk
+        stopTimer() // Kill clock on victory
         let currentWins = UserDefaults.standard.integer(forKey: "total_wins")
-        
-        // Save updated win count
         UserDefaults.standard.set(currentWins + 1, forKey: "total_wins")
-        
-        // Provide physical feedback for the win
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
     
-    // --- Data Persistence (Leaderboard) ---
-    
     func saveFinalScore(playerName: String, gridSize: Int) {
-        let modeName: String
-        switch gridSize {
-        case 3: modeName = "Easy"
-        case 5: modeName = "Medium"
-        case 7: modeName = "Hard"
-        default: modeName = "Unknown"
-        }
-
-        // Professional Scoring Logic: Accuracy (Matches) + Efficiency (Flips Remaining)
-        let finalScore = self.score + (self.movesRemaining * 10)
-        let newScore = PlayerScore(name: playerName, score: finalScore, mode: modeName, date: Date())
+        // Efficiency Bonus calculation
+        let resourceBonus = (currentMode == "Time Attack") ? (timeRemaining * 5) : (movesRemaining * 10)
+        let finalScore = self.score + resourceBonus
+        
+        let newScore = PlayerScore(name: playerName, score: finalScore, mode: currentMode, date: Date())
         
         if let data = UserDefaults.standard.data(forKey: "high_scores"),
            var savedScores = try? JSONDecoder().decode([PlayerScore].self, from: data) {
             savedScores.append(newScore)
-            // Sort leaderboard by Score (Desc) and then Date
-            leaderboard = savedScores.sorted {
-                if $0.score == $1.score { return $0.date > $1.date }
-                return $0.score > $1.score
-            }
+            leaderboard = savedScores.sorted { $0.score > $1.score }
         } else {
             leaderboard = [newScore]
         }
         
-        // Save encoded JSON back to UserDefaults
         if let encoded = try? JSONEncoder().encode(leaderboard) {
             UserDefaults.standard.set(encoded, forKey: "high_scores")
         }

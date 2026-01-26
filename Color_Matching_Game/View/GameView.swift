@@ -50,13 +50,23 @@ struct GameView: View {
                         
                         Spacer()
                         
+                        // UPDATED: Toggle between Time Left and Flips Left
                         VStack(alignment: .trailing) {
-                            Text("FLIPS LEFT")
-                                .font(.caption.bold())
-                                .foregroundColor(.secondary)
-                            Text("\(viewModel.movesRemaining)")
-                                .font(.title2.bold())
-                                .foregroundColor(viewModel.movesRemaining < 5 ? .red : .primary)
+                            if mode == "Time Attack" {
+                                Text("TIME LEFT")
+                                    .font(.caption.bold())
+                                    .foregroundColor(.secondary)
+                                Text("\(viewModel.timeRemaining)s")
+                                    .font(.title2.bold())
+                                    .foregroundColor(viewModel.timeRemaining < 10 ? .red : .primary)
+                            } else {
+                                Text("FLIPS LEFT")
+                                    .font(.caption.bold())
+                                    .foregroundColor(.secondary)
+                                Text("\(viewModel.movesRemaining)")
+                                    .font(.title2.bold())
+                                    .foregroundColor(viewModel.movesRemaining < 5 ? .red : .primary)
+                            }
                         }
                     }
                     
@@ -93,7 +103,7 @@ struct GameView: View {
                             .foregroundColor(.red)
                     }
                     
-                    // NEW: Victory View with Profile Integration
+                    // Victory View with Profile Integration
                     if viewModel.grid.allSatisfy({ $0.isMatched }) && !viewModel.grid.isEmpty {
                         VStack(spacing: 12) {
                             Text("Victory!")
@@ -105,7 +115,6 @@ struct GameView: View {
                                 .foregroundColor(.secondary)
 
                             Button("Play Again") {
-                                // Save score to current profile and reset
                                 viewModel.saveFinalScore(playerName: username, gridSize: gridSize)
                                 viewModel.startNewGame(gridSize: gridSize)
                                 triggerNotificationHaptic(.success)
@@ -154,6 +163,10 @@ struct GameView: View {
                 .padding(.bottom, 10)
             }
             .navigationBarTitleDisplayMode(.inline)
+            // Added cleanup logic for the timer
+            .onDisappear {
+                viewModel.stopTimer()
+            }
             
             // --- Confetti Overlay ---
             if viewModel.grid.allSatisfy({ $0.isMatched }) && !viewModel.grid.isEmpty {
