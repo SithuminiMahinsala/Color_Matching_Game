@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct LandingView: View {
-    // State to control navigation to the main menu
     @State private var isActive = false
     
     var body: some View {
@@ -16,9 +15,9 @@ struct LandingView: View {
             VStack {
                 Spacer()
                 
-                // --- Game Branding Section ---
+                // Game Branding Section 
                 VStack(spacing: 25) {
-                    // This uses the icon you generated. Ensure you named it "AppIconImage" in Assets
+                    
                     Image("AppIconImage")
                         .resizable()
                         .scaledToFit()
@@ -39,7 +38,7 @@ struct LandingView: View {
                 
                 Spacer()
                 
-                // --- Primary Action ---
+                // Primary Action
                 NavigationLink(destination: MenuView()) {
                     Text("PLAY GAME")
                         .font(.title3.bold())
@@ -55,7 +54,7 @@ struct LandingView: View {
                 }
                 .padding(.horizontal, 40)
                 
-                // --- Legal Links Section ---
+                //Legal Links Section
                 HStack(spacing: 25) {
                     NavigationLink(destination: PrivacyView()) {
                         Text("Privacy Policy")

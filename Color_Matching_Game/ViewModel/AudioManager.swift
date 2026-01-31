@@ -31,8 +31,8 @@ class AudioManager {
         guard let url = Bundle.main.url(forResource: "background_music", withExtension: "mp3") else { return }
         do {
             musicPlayer = try AVAudioPlayer(contentsOf: url)
-            musicPlayer?.numberOfLoops = -1 // Loop infinitely
-            musicPlayer?.volume = 0.3 // Keep it low
+            musicPlayer?.numberOfLoops = -1
+            musicPlayer?.volume = 0.3 
             musicPlayer?.play()
         } catch {
             print("Music Error: \(error)")

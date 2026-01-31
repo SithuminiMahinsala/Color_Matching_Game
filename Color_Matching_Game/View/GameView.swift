@@ -10,9 +10,9 @@ import SwiftUI
 struct GameView: View {
     @StateObject var viewModel: GameViewModel
     let gridSize: Int
-    let mode: String // Tracks current difficulty/mode
+    let mode: String // Tracks current difficulty
     
-    // Automatically fetches the username saved during the tutorial
+    // username saved during the tutorial
     @AppStorage("username") private var username: String = "Player"
     
     private let spacing: CGFloat = 8
@@ -20,14 +20,14 @@ struct GameView: View {
     init(gridSize: Int, mode: String) {
         self.gridSize = gridSize
         self.mode = mode
-        // Now both values are passed to the ViewModel correctly
+        
         _viewModel = StateObject(wrappedValue: GameViewModel(gridSize: gridSize, mode: mode))
     }
     
     var body: some View {
         ZStack {
             VStack(spacing: 15) {
-                // --- Header: Stats and Progress Bar ---
+                //Stats and Progress Bar 
                 VStack(spacing: 10) {
                     HStack {
                         VStack(alignment: .leading) {
@@ -50,7 +50,7 @@ struct GameView: View {
                         
                         Spacer()
                         
-                        // UPDATED: Toggle between Time Left and Flips Left
+                        //Toggle between Time Left and Flips Left
                         VStack(alignment: .trailing) {
                             if mode == "Time Attack" {
                                 Text("TIME LEFT")
@@ -80,7 +80,7 @@ struct GameView: View {
 
                 Spacer()
 
-                // --- Game Grid Section ---
+                //Game Grid Section
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: gridSize),
                           spacing: spacing) {
                     ForEach(viewModel.grid.indices, id: \.self) { index in
@@ -95,7 +95,7 @@ struct GameView: View {
                 
                 Spacer()
                 
-                // --- Status Overlays (Game Over / Win) ---
+                //Game Over / Win
                 VStack {
                     if viewModel.isGameOver {
                         Text("GAME OVER")
@@ -104,7 +104,6 @@ struct GameView: View {
                     }
                     
                     // Victory View with Profile Integration
-                    // Update the Victory Button in GameView.swift
                     if viewModel.grid.allSatisfy({ $0.isMatched }) && !viewModel.grid.isEmpty {
                         VStack(spacing: 12) {
                             Text("Victory!")
@@ -116,7 +115,6 @@ struct GameView: View {
                                 .foregroundColor(.secondary)
 
                             Button("Play Again") {
-                                // Just start a new game; the score was already saved by handleWin()
                                 viewModel.startNewGame(gridSize: gridSize)
                                 triggerNotificationHaptic(.success)
                             }
@@ -127,7 +125,7 @@ struct GameView: View {
 
                 Spacer()
                 
-                // --- Action Buttons ---
+                //Action Buttons
                 HStack(spacing: 15) {
                     Button(action: {
                         viewModel.revealHint()
@@ -162,12 +160,12 @@ struct GameView: View {
                 .padding(.bottom, 10)
             }
             .navigationBarTitleDisplayMode(.inline)
-            // Added cleanup logic for the timer
+            //cleanup logic for the timer
             .onDisappear {
                 viewModel.stopTimer()
             }
             
-            // --- Confetti Overlay ---
+            //Confetti Overlay
             if viewModel.grid.allSatisfy({ $0.isMatched }) && !viewModel.grid.isEmpty {
                 ConfettiView()
                     .ignoresSafeArea()
@@ -176,7 +174,7 @@ struct GameView: View {
         }
     }
     
-    // --- Helper Functions and Haptics ---
+    //Helper Functions and Haptics
     
     private func handleTap(index: Int) {
         if !viewModel.isGameOver {

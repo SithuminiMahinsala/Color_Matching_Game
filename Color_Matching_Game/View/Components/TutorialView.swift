@@ -69,7 +69,7 @@ struct TutorialView: View {
                                     }
                                 }
                                 .padding(.top, 20)
-                                .transition(.opacity) // Smooth appearance
+                                .transition(.opacity) 
                             }
                         }
                         .tag(index)
@@ -78,7 +78,7 @@ struct TutorialView: View {
                 .tabViewStyle(.page)
                 .indexViewStyle(.page(backgroundDisplayMode: .always))
                 
-                // BUTTON LOGIC: Changes text and behavior on last page
+                // BUTTON LOGIC
                 Button(action: {
                     if currentStep < steps.count - 1 {
                         withAnimation { currentStep += 1 }

@@ -9,17 +9,17 @@ import SwiftUI
 import Combine
 
 class GameViewModel: ObservableObject {
-    // --- Published Properties (UI Auto-Refresh) ---
+    // Published Properties
     @Published var grid: [GridCell] = []
     @Published var score: Int = 0
     @Published var isGameOver: Bool = false
     @Published var isFlipping: Bool = false
     @Published var movesRemaining: Int = 0
     @Published var leaderboard: [PlayerScore] = []
-    @Published var timeRemaining: Int = 0 // Tracks seconds for Time Attack
-    @Published var totalClicks: Int = 0 // Tracks every card tap for telemetry
+    @Published var timeRemaining: Int = 0 
+    @Published var totalClicks: Int = 0 
     
-    // --- Internal Properties ---
+    // Internal Properties
     private var gameTimer: AnyCancellable? // The actual clock engine
     var currentMode: String // Tracks current difficulty/mode
     private var selectedIndex: Int? = nil
@@ -35,13 +35,13 @@ class GameViewModel: ObservableObject {
         Color(red:0/255, green: 191/255, blue: 213/255)    // Cyan
     ]
     
-    // FIXED: Initialize mode first to avoid compiler errors
+    
     init(gridSize: Int, mode: String) {
         self.currentMode = mode
         startNewGame(gridSize: gridSize)
     }
     
-    // --- Core Game Logic ---
+    // Core Game Logic
     
     func startNewGame(gridSize: Int) {
         score = 0
@@ -56,9 +56,10 @@ class GameViewModel: ObservableObject {
         // Telemetry: Start tracking the session duration
         TelemetryManager.shared.startTracking()
         
-        // 1. Setup mode-specific limits
+        // Setup mode-specific limits
         if currentMode == "Time Attack" {
-            timeRemaining = 60 // 60-second limit for Time Attack
+            timeRemaining = 60
+            startTimerIfRequired()
         } else {
             switch gridSize {
             case 3: movesRemaining = 15
@@ -169,7 +170,7 @@ class GameViewModel: ObservableObject {
                 score += 10
                 selectedIndex = nil
                 
-                // Reward for Time Attack: Bonus time!
+                // Reward for Time Attack
                 if currentMode == "Time Attack" {
                     timeRemaining += 3
                 }
@@ -203,16 +204,16 @@ class GameViewModel: ObservableObject {
     }
 
     private func handleWin() {
-        stopTimer() // Kill clock on victory
+        stopTimer() 
         
         // Telemetry: Record session stats on win
         TelemetryManager.shared.endTracking(mode: currentMode, clicks: totalClicks)
         
-        // 1. Increment persistent win counter for unlocking levels
+        // Increment persistent win counter for unlocking levels
         let currentWins = UserDefaults.standard.integer(forKey: "total_wins")
         UserDefaults.standard.set(currentWins + 1, forKey: "total_wins")
         
-        // 2. AUTO-SAVE: Automatically save the score using the current profile
+        // AUTO-SAVE
         let currentUsername = UserDefaults.standard.string(forKey: "username") ?? "Player"
         self.saveFinalScore(playerName: currentUsername)
         

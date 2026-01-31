@@ -17,7 +17,7 @@ struct SettingsView: View {
     
     var body: some View {
         Form {
-            // --- Player Profile Section ---
+            //Player Profile Section
             Section(header: Text("Player Profile")) {
                 HStack {
                     Text("Username")
@@ -36,7 +36,7 @@ struct SettingsView: View {
                 Toggle("Sound Effects", isOn: $soundEnabled)
             }
             
-            // --- Developer/Testing Tools ---
+            //Developer Tools
             Section(header: Text("Developer Tools")) {
                 Button(action: {
                     showingTutorialAlert = true
@@ -78,7 +78,7 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         
-        // --- Alerts for Reset Actions ---
+        // Alerts for Reset Actions
         .alert("Reset Tutorial?", isPresented: $showingTutorialAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Reset", role: .destructive) {
@@ -102,7 +102,7 @@ struct SettingsView: View {
     // Logic to clear persistent stats
     private func resetAllData() {
         UserDefaults.standard.removeObject(forKey: "high_scores")
-        UserDefaults.standard.removeObject(forKey: "total_wins") // Resets progression locks
+        UserDefaults.standard.removeObject(forKey: "total_wins")
         triggerImpactHaptic(.heavy)
     }
     

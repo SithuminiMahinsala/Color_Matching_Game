@@ -16,7 +16,7 @@ struct GameSession: Codable, Identifiable {
 }
 
 class TelemetryManager: ObservableObject {
-    static let shared = TelemetryManager() // Singleton for app-wide access
+    static let shared = TelemetryManager() 
     
     @Published var sessions: [GameSession] = []
     private var startTime: Date?
@@ -44,11 +44,11 @@ class TelemetryManager: ObservableObject {
     
     private func saveSession(_ session: GameSession) {
         var logs = fetchSessions()
-        logs.insert(session, at: 0) // Keep newest at the top
+        logs.insert(session, at: 0) 
         
         if let encoded = try? JSONEncoder().encode(logs) {
             UserDefaults.standard.set(encoded, forKey: "telemetry_logs")
-            // Update the published property to refresh the UI
+            
             DispatchQueue.main.async {
                 self.sessions = logs
             }

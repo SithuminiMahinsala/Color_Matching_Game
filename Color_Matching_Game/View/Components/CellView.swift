@@ -37,17 +37,17 @@ struct CellView: View {
                 // If it is selected OR matched, show the color
                 .opacity(cell.isSelected || cell.isMatched ? 1 : 0)
         }
-        // --- The 3D Flip Animation ---
+        // 3D Flip Animation
         .rotation3DEffect(
             .degrees(cell.isSelected || cell.isMatched ? 180 : 0),
-            axis: (x: 0, y: 1, z: 0) // Flips horizontally on the Y-axis
+            axis: (x: 0, y: 1, z: 0) 
         )
-        // Ensures content (like icons) isn't mirrored when flipped
+        
         .rotation3DEffect(
             .degrees(cell.isSelected || cell.isMatched ? 180 : 0),
             axis: (x: 0, y: 1, z: 0)
         )
-        // Adds a bouncy spring effect to the movement
+        // bouncy spring effect to the movement
         .animation(.spring(response: 0.4, dampingFraction: 0.6), value: cell.isSelected)
         .aspectRatio(1, contentMode: .fit)
     }

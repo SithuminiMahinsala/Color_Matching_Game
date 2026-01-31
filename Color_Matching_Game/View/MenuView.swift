@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct MenuView: View {
-    // --- Persistence & State ---
+    
     @AppStorage("username") private var username: String = "Player" // Persistent username
     @State private var topScoreEasy: Int = 0
     @State private var topScoreMedium: Int = 0
@@ -30,7 +30,7 @@ struct MenuView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 30) {
                         
-                        // --- Personalized Header ---
+                       
                         VStack(spacing: 5) {
                             Text("Hello, \(username)!")
                                 .font(.subheadline.bold())
@@ -47,7 +47,7 @@ struct MenuView: View {
                         }
                         .padding(.top, 30)
                         
-                        // --- Progress Tracker ---
+                        //Progress Tracker
                         VStack(spacing: 12) {
                             HStack {
                                 Label("\(totalWins) Wins", systemImage: "trophy.fill")
@@ -77,7 +77,7 @@ struct MenuView: View {
                         .background(RoundedRectangle(cornerRadius: 20).fill(.white).shadow(color: .black.opacity(0.05), radius: 10))
                         .padding(.horizontal)
 
-                        // --- Classic Progression Section ---
+                        //Classic Progression Section 
                         VStack(alignment: .leading, spacing: 15) {
                                     sectionHeader(title: "Classic Levels", icon: "chart.bar.fill")
                                     menuButton(title: "Easy", color: .green, gridSize: 3, topScore: topScoreEasy, isLocked: false)
@@ -85,10 +85,10 @@ struct MenuView: View {
                                     menuButton(title: "Hard", color: .red, gridSize: 7, topScore: topScoreHard, isLocked: totalWins < 10)
                                 }
                         
-                        // --- Special Challenges Section ---
+                        //Special Challenges Section
                         VStack(alignment: .leading, spacing: 15) {
                                     sectionHeader(title: "Special Challenges", icon: "bolt.fill")
-                                    // FIX: Pass the new topScore variables here
+                                    
                                     menuButton(title: "Time Attack", color: .purple, gridSize: 5, topScore: topScoreTimeAttack, isLocked: totalWins < 15)
                                     menuButton(title: "Memory Blitz", color: .indigo, gridSize: 6, topScore: topScoreMemoryBlitz, isLocked: totalWins < 20)
                                 }
@@ -113,7 +113,7 @@ struct MenuView: View {
         }
     }
 
-    // --- Helper UI Components ---
+   
     
     func sectionHeader(title: String, icon: String) -> some View {
         HStack {
@@ -126,7 +126,7 @@ struct MenuView: View {
     }
 
     func menuButton(title: String, color: Color, gridSize: Int, topScore: Int, isLocked: Bool) -> some View {
-        // Pass both gridSize and title (as mode) to GameView
+        
         NavigationLink(destination: GameView(gridSize: gridSize, mode: title)) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
@@ -148,7 +148,7 @@ struct MenuView: View {
         .disabled(isLocked)
     }
 
-    // --- Logic ---
+    //  Logic 
     
     var nextGoalInfo: (goal: Int, name: String) {
         if totalWins < 3 { return (3, "Medium") }
@@ -170,7 +170,7 @@ struct MenuView: View {
         if let data = UserDefaults.standard.data(forKey: "high_scores"),
            let savedScores = try? JSONDecoder().decode([PlayerScore].self, from: data) {
             
-            // These MUST match your button titles exactly
+            
             topScoreEasy = savedScores.filter { $0.mode == "Easy" }.map { $0.score }.max() ?? 0
             topScoreMedium = savedScores.filter { $0.mode == "Medium" }.map { $0.score }.max() ?? 0
             topScoreHard = savedScores.filter { $0.mode == "Hard" }.map { $0.score }.max() ?? 0

@@ -18,7 +18,6 @@ struct LeaderboardView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // --- NEW: Custom Mode Chip Bar ---
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     modeChip(title: "Easy", icon: "chart.bar")
@@ -31,7 +30,7 @@ struct LeaderboardView: View {
             }
             .background(Color(.systemGroupedBackground))
             
-            // --- Leaderboard List ---
+            //Leaderboard List
             List {
                 if filteredScores.isEmpty {
                     Section {
@@ -89,7 +88,7 @@ struct LeaderboardView: View {
         .onAppear(perform: loadScores)
     }
     
-    // --- NEW: Chip UI Helper ---
+   
     private func modeChip(title: String, icon: String) -> some View {
         Button(action: {
             withAnimation(.spring()) {
