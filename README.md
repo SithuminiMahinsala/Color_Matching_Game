@@ -2,7 +2,7 @@
 
 A professional, logic-based memory matching game built with **SwiftUI**. Test your cognitive skills by matching colors across various game modes designed with industrial software standards.
 
-## 🚀 Features
+## Features
 
 ### **Core Gameplay**
 * **Dynamic Grid Logic**: Interactive 2D grid matching with real-time score calculation.
@@ -19,7 +19,7 @@ A professional, logic-based memory matching game built with **SwiftUI**. Test yo
 * **Visual Polish**: Implemented a **Confetti Celebration** on victory and a professional **Landing View** with custom 1024x1024 branding.
 * **Persistent Profiles**: Localized user profile management and leaderboard tracking via `UserDefaults`.
 
-## 🛠 Tech Stack
+## Tech Stack
 
 * **Language**: Swift 5.10
 * **Framework**: SwiftUI (Declarative UI)
@@ -27,13 +27,13 @@ A professional, logic-based memory matching game built with **SwiftUI**. Test yo
 * **Testing**: XCTest Framework
 * **Persistence**: `UserDefaults` with `Codable` support
 
-## 📂 Project Structure
+## Project Structure
 
 * `Model/`: Data structures for game cells, telemetry sessions, and player scores.
 * `ViewModel/`: Core game engines, audio management, and telemetry services.
 * `View/`: Modular UI components, specialized game screens, and diagnostic logs.
 
-## 🧑‍💻 Developer
+## Developer
 
 * **Name**: Sithumini Mahinsala
 * **Student ID**: COBSCCOMP242P-001
